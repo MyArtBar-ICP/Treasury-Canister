@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "treasury": {
+      "candid": "src/treasury/treasury.did",
+      "package": "treasury",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
