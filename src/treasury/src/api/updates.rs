@@ -16,13 +16,13 @@ use crate::TRANSFER_HISTORY;
 pub struct TransferToPrincipal {
     pub principal: Principal,
     pub amount: u64,
-    pub ledger_id: String,
+    pub ledger_id: Principal,
 }
 
 #[derive(CandidType, Serialize, Clone, Deserialize)]
 pub struct TransferToMuliple {
     pub principals: Vec<PrincipalTransfer>,
-    pub ledger_id: String,
+    pub ledger_id: Principal,
 }
 
 #[derive(CandidType, Serialize, Clone, Deserialize)]
@@ -68,7 +68,7 @@ pub async fn transfer_to_multiple(arg: TransferToMuliple) -> Result<(), String> 
             amount: NumTokens::from(principal.amount),
         };
 
-        transfer_tokens(transfer_amount_arg, &arg.ledger_id).await?;
+        transfer_tokens(transfer_amount_arg, arg.ledger_id).await?;
         let id = TRANSFER_HISTORY.with(|history| {
             let history = history.borrow();
             history.len() as u64
@@ -100,7 +100,7 @@ pub async fn transfer_to_principal(arg: TransferToPrincipal) -> Result<u64, Stri
         amount: NumTokens::from(arg.amount),
     };
 
-    let block_index = transfer_tokens(transfer_amount_arg, &arg.ledger_id).await?;
+    let block_index = transfer_tokens(transfer_amount_arg, arg.ledger_id).await?;
     let history_arg = TransferHistory::TransferToPrincipal(arg.clone());
     let id = TRANSFER_HISTORY.with(|history| {
         let history = history.borrow();
@@ -113,10 +113,10 @@ pub async fn transfer_to_principal(arg: TransferToPrincipal) -> Result<u64, Stri
     Ok(block_index)
 }
 
-async fn transfer_tokens(arg: TransferArg, ledger_id: &str) -> Result<u64, String> {
+async fn transfer_tokens(arg: TransferArg, ledger_id: Principal) -> Result<u64, String> {
     ic_cdk
         ::call::<(TransferArg,), (Result<BlockIndex, TransferError>,)>(
-            Principal::from_text(ledger_id).expect("Could not decode the principal."),
+            ledger_id,
             "icrc1_transfer",
             (arg,)
         ).await
