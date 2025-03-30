@@ -9,6 +9,19 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-candid = "0.10"
-ic-cdk = "0.16"
-ic-cdk-timers = "0.10" # Feel free to remove this dependency if you don't need timers
+ic-cdk-timers = {workspace = true}
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+serde = { workspace = true }
+rstest = { workspace = true }
+rand = {workspace = true}
+rand_chacha = {workspace = true}
+uuid = { workspace = true, features = ["serde"] }
+chrono = {workspace = true}
+serde_json = { workspace = true }
+ic-stable-structures = { workspace = true }
+ciborium = { workspace = true }
+ic-certification = { workspace = true }
+icrc-ledger-types = { workspace = true }
+ic-ledger-types = { workspace = true }
+
