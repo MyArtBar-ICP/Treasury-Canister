@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use candid::{ CandidType, Decode, Encode, Principal };
 use ic_cdk::{
     api::{ management_canister::main::{ canister_status, CanisterIdRecord }, time },
-    update,
+    update, query,
 };
 use ic_ledger_types::{ BlockIndex, TransferError };
 use ic_stable_structures::{ storable::Bound, Storable };
@@ -49,12 +49,75 @@ impl Storable for TransferHistory {
     const BOUND: Bound = Bound::Unbounded;
 }
 
+#[query]
+pub async fn validate_transfer_to_multiple(arg: TransferToMuliple) -> Result<String, String> {
+    let caller = ic_cdk::caller();
+    if !is_controller(caller).await {
+        return Err("Caller is not a controller".to_string());
+    }
+
+    if arg.principals.is_empty() {
+        return Err("No principals provided for transfer".to_string());
+    }
+    
+    for principal_transfer in &arg.principals {
+        if principal_transfer.amount == 0 {
+            return Err(format!("Transfer amount for principal {} must be greater than 0", 
+                principal_transfer.principal));
+        }
+    }
+    
+    if arg.ledger_id == Principal::anonymous() {
+        return Err("Invalid ledger ID".to_string());
+    }
+    
+    let total_amount: u64 = arg.principals.iter().map(|p| p.amount).sum();
+    let recipient_count = arg.principals.len();
+    
+    Ok(format!(
+        "Transfer {} tokens to {} recipients from ledger {}",
+        total_amount,
+        recipient_count,
+        arg.ledger_id
+    ))
+}
+
+#[query]
+pub async fn validate_transfer_to_principal(arg: TransferToPrincipal) -> Result<String, String> {
+    let caller = ic_cdk::caller();
+    if !is_controller(caller).await {
+        return Err("Caller is not a controller".to_string());
+    }
+    
+    if arg.amount == 0 {
+        return Err("Transfer amount must be greater than 0".to_string());
+    }
+    
+    if arg.principal == Principal::anonymous() {
+        return Err("Cannot transfer to anonymous principal".to_string());
+    }
+    
+    if arg.ledger_id == Principal::anonymous() {
+        return Err("Invalid ledger ID".to_string());
+    }
+    
+    Ok(format!(
+        "Transfer {} tokens to principal {} from ledger {}",
+        arg.amount,
+        arg.principal,
+        arg.ledger_id
+    ))
+}
+
 #[update]
 pub async fn transfer_to_multiple(arg: TransferToMuliple) -> Result<(), String> {
     let caller = ic_cdk::caller();
     if !is_controller(caller).await {
         return Err("Caller is not a controller".to_string());
     }
+    
+    validate_transfer_to_multiple(arg.clone()).await?;
+    
     for principal in arg.principals.clone() {
         let transfer_amount_arg = TransferArg {
             to: Account {
@@ -87,6 +150,8 @@ pub async fn transfer_to_principal(arg: TransferToPrincipal) -> Result<u64, Stri
     if !is_controller(caller).await {
         return Err("Caller is not a controller".to_string());
     }
+    
+    validate_transfer_to_principal(arg.clone()).await?;
 
     let transfer_amount_arg = TransferArg {
         to: Account {
