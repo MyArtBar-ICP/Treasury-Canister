@@ -19,4 +19,3 @@ chrono = { version = "0.4", default-features = false, features = ["std"] }
 ciborium = "0.2.1"
 ic-certification = "2.4.0"
 icrc-ledger-types = "0.1.8"
-ic-ledger-types = "0.14.0"

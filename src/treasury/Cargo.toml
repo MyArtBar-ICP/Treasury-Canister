@@ -23,5 +23,4 @@ ic-stable-structures = { workspace = true }
 ciborium = { workspace = true }
 ic-certification = { workspace = true }
 icrc-ledger-types = { workspace = true }
-ic-ledger-types = { workspace = true }
 

@@ -1,4 +1,5 @@
 extern crate serde;
+use icrc_ledger_types::icrc1::transfer::BlockIndex;
 use api::updates::{TransferHistory, TransferToPrincipal, TransferToMuliple};
 use ic_stable_structures::memory_manager::{ MemoryId, MemoryManager, VirtualMemory };
 use ic_stable_structures::{ DefaultMemoryImpl, StableBTreeMap };
