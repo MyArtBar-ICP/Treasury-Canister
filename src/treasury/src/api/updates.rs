@@ -4,7 +4,6 @@ use candid::{ CandidType, Decode, Encode, Principal };
 use ic_cdk::{
     api::{ management_canister::main::{ canister_status, CanisterIdRecord }, time },
     update,
-    query,
 };
 use ic_stable_structures::{ storable::Bound, Storable };
 use icrc_ledger_types::icrc1::{ account::Account, transfer::{ BlockIndex, NumTokens, TransferArg, TransferError } };

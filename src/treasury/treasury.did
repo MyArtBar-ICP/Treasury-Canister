@@ -5,6 +5,10 @@ type PrincipalTransfer = record {
 type Result = variant { Ok; Err : text };
 type Result_1 = variant { Ok : nat; Err : text };
 type Result_2 = variant { Ok : text; Err : text };
+type TransferHistory = variant {
+  TransferToMultiple : TransferToMuliple;
+  TransferToPrincipal : TransferToPrincipal;
+};
 type TransferToMuliple = record {
   ledger_id : principal;
   principals : vec PrincipalTransfer;
@@ -15,7 +19,7 @@ type TransferToPrincipal = record {
   amount : nat64;
 };
 service : {
-  get_transfer_history : () -> (nat64) query;
+  get_transfer_history : () -> (vec TransferHistory) query;
   transfer_to_multiple : (TransferToMuliple) -> (Result);
   transfer_to_principal : (TransferToPrincipal) -> (Result_1);
   validate_transfer_to_multiple : (TransferToMuliple) -> (Result_2);
