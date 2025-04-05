@@ -19,7 +19,7 @@ pub struct TransferToPrincipal {
 }
 
 #[derive(CandidType, Serialize, Clone, Deserialize)]
-pub struct TransferToMuliple {
+pub struct TransferToMultiple {
     pub principals: Vec<PrincipalTransfer>,
     pub ledger_id: Principal,
 }
@@ -33,7 +33,7 @@ pub struct PrincipalTransfer {
 #[derive(CandidType, Serialize, Clone, Deserialize)]
 pub enum TransferHistory {
     TransferToPrincipal(TransferToPrincipal),
-    TransferToMultiple(TransferToMuliple),
+    TransferToMultiple(TransferToMultiple),
 }
 
 impl Storable for TransferHistory {
@@ -49,23 +49,7 @@ impl Storable for TransferHistory {
 }
 
 #[update]
-pub async fn validate_transfer_to_multiple(arg: TransferToMuliple) -> Result<String, String> {
-
-    let balance = get_tokens_balance(arg.ledger_id).await?;
-    let total_amount: u64 = arg.principals
-        .iter()
-        .map(|p| p.amount)
-        .sum();
-    if balance < NumTokens::from(total_amount) {
-        return Err(
-            format!(
-                "Insufficient balance: {} tokens available, {} tokens requested",
-                balance,
-                total_amount
-            )
-        );
-    }
-
+pub async fn validate_transfer_to_multiple(arg: TransferToMultiple) -> Result<String, String> {
     if arg.principals.is_empty() {
         return Err("No principals provided for transfer".to_string());
     }
@@ -103,18 +87,6 @@ pub async fn validate_transfer_to_multiple(arg: TransferToMuliple) -> Result<Str
 
 #[update]
 pub async fn validate_transfer_to_principal(arg: TransferToPrincipal) -> Result<String, String> {
-
-    let balance = get_tokens_balance(arg.ledger_id).await?;
-    if balance < NumTokens::from(arg.amount) {
-        return Err(
-            format!(
-                "Insufficient balance: {} tokens available, {} tokens requested",
-                balance,
-                arg.amount
-            )
-        );
-    }
-
     if arg.amount == 0 {
         return Err("Transfer amount must be greater than 0".to_string());
     }
@@ -138,13 +110,28 @@ pub async fn validate_transfer_to_principal(arg: TransferToPrincipal) -> Result<
 }
 
 #[update]
-pub async fn transfer_to_multiple(arg: TransferToMuliple) -> Result<(), String> {
+pub async fn transfer_to_multiple(arg: TransferToMultiple) -> Result<(), String> {
     let caller = ic_cdk::caller();
     if !is_controller(caller).await {
         return Err("Caller is not a controller".to_string());
     }
 
     validate_transfer_to_multiple(arg.clone()).await?;
+
+    let balance = get_tokens_balance(arg.ledger_id).await?;
+    let total_amount: u64 = arg.principals
+        .iter()
+        .map(|p| p.amount)
+        .sum();
+    if balance < NumTokens::from(total_amount) {
+        return Err(
+            format!(
+                "Insufficient balance: {} tokens available, {} tokens requested",
+                balance,
+                total_amount
+            )
+        );
+    }
 
     for principal in arg.principals.clone() {
         let transfer_amount_arg = TransferArg {
@@ -181,6 +168,17 @@ pub async fn transfer_to_principal(arg: TransferToPrincipal) -> Result<BlockInde
     }
 
     validate_transfer_to_principal(arg.clone()).await?;
+
+    let balance = get_tokens_balance(arg.ledger_id).await?;
+    if balance < NumTokens::from(arg.amount) {
+        return Err(
+            format!(
+                "Insufficient balance: {} tokens available, {} tokens requested",
+                balance,
+                arg.amount
+            )
+        );
+    }
 
     let transfer_amount_arg = TransferArg {
         to: Account {
